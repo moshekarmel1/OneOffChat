@@ -2,6 +2,7 @@
   "name": "one-off-chat",
   "version": "0.0.1",
   "description": "A simple one off chat application",
+  "author": "Moshe Karmel",
   "main": "index.js",
   "dependencies": {
     "express": "^4.10.2",
