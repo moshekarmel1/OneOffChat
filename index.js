@@ -15,7 +15,6 @@ var chats = {};
 io.on('connection', function (socket) {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
-        console.log(data);
         socket.join(data.room);
         // we store the username in the socket session for this client
         socket.username = data.username;
@@ -23,9 +22,6 @@ io.on('connection', function (socket) {
         chats[data.room].usernames[data.username] = data.username;
         chats[data.room].numUsers += 1;
         chats[data.room].addedUser = true;
-        console.log('broadcast login!');
-        console.log(chats);
-        console.log(socket.id);
         socket.emit('login', {
             numUsers: chats[data.room].numUsers,
             username: socket.username
@@ -45,6 +41,14 @@ io.on('connection', function (socket) {
         };
         socket.emit('go chat', {
             socket: socket.id
+        }); 
+    });
+    // when the client emits 'new message', this listens and executes
+    socket.on('new message', function (data) {
+        // we tell the client to execute 'new message'
+        socket.broadcast.to(data.room).emit('new message', {
+            username: socket.username,
+            message: data.message
         }); 
     });
 

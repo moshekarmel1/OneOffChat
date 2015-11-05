@@ -36,6 +36,40 @@ $(function() {
         log(message);
     }
 
+    // Sends a chat message
+    function sendMessage () {
+        var message = $inputMessage.val();
+        // Prevent markup from being injected into the message
+        message = cleanInput(message);
+        // if there is a non-empty message and a socket connection
+        if (message && connected) {
+            $inputMessage.val('');
+            addChatMessage({
+                username: username,
+                message: message
+            });
+            // tell server to execute 'new message' and send along one parameter
+            socket.emit('new message', {
+                message: message,
+                room: socket.room
+            });
+        }
+    }
+
+    // Adds the visual chat typing message
+    function addChatTyping (data) {
+        data.typing = true;
+        data.message = 'is typing';
+        addChatMessage(data);
+    }
+
+    // Removes the visual chat typing message
+    function removeChatTyping (data) {
+        getTypingMessages(data).fadeOut(function () {
+            $(this).remove();
+        });
+    }
+
     // Log a message
     function log (message, options) {
         var $el = $('<li>').addClass('log').text(message);
@@ -178,21 +212,51 @@ $(function() {
             });
         }
     }
+    //CLICK EVENTS
+    $window.keydown(function (event) {
+        // Auto-focus the current input when a key is typed
+        if (!(event.ctrlKey || event.metaKey || event.altKey)) {
+            $currentInput.focus();
+        }
+        // When the client hits ENTER on their keyboard
+        if (event.which === 13) {
+            if (username) {
+                sendMessage();
+                socket.emit('stop typing');
+                typing = false;
+            } else {
+                setUsername();
+            }
+        }
+    });
 
+    $inputMessage.on('input', function() {
+        updateTyping();
+    });
+
+    // Focus input when clicking anywhere on login page
+    $loginPage.click(function () {
+        $currentInput.focus();
+    });
+
+    // Focus input when clicking on the message input's border
+    $inputMessage.click(function () {
+        $inputMessage.focus();
+    });
+    // Start a new chat
     $('#start').on('click', function(){
         socket.emit('start', {});
     });
-
+    // Join a chat
     $('#go').on('click', function(){
         setUsername();
     });
-
+    //SOCKET EVENTS
     socket.on('go chat', function (data) {
         location.href = '/' + data.socket;
     });
-
+    // Whenever the server emits 'login', log the login message
     socket.on('login', function (data) {
-        console.log('got login !! ' + data);
         connected = true;
         // Display the welcome message
         var message = "Welcome to the chat – " + data.username;
@@ -201,10 +265,27 @@ $(function() {
         });
         addParticipantsMessage(data);
     });
-
+    // Whenever the server emits 'new message', update the chat body
+    socket.on('new message', function (data) {
+        addChatMessage(data);
+    });
     // Whenever the server emits 'user joined', log it in the chat body
     socket.on('user joined', function (data) {
         log(data.username + ' joined');
         addParticipantsMessage(data);
+    });
+    // Whenever the server emits 'user left', log it in the chat body
+    socket.on('user left', function (data) {
+        log(data.username + ' left');
+        addParticipantsMessage(data);
+        removeChatTyping(data);
+    });
+    // Whenever the server emits 'typing', show the typing message
+    socket.on('typing', function (data) {
+        addChatTyping(data);
+    });
+    // Whenever the server emits 'stop typing', kill the typing message
+    socket.on('stop typing', function (data) {
+        removeChatTyping(data);
     });
 });
