@@ -152,7 +152,9 @@ $(function() {
         if (connected) {
             if (!typing) {
             typing = true;
-            socket.emit('typing');
+            socket.emit('typing', {
+                room: socket.room
+            });
         }
         lastTypingTime = (new Date()).getTime();
 
@@ -160,7 +162,9 @@ $(function() {
             var typingTimer = (new Date()).getTime();
             var timeDiff = typingTimer - lastTypingTime;
             if (timeDiff >= TYPING_TIMER_LENGTH && typing) {
-                socket.emit('stop typing');
+                socket.emit('stop typing', {
+                    room: socket.room
+                });
                 typing = false;
             }
         }, TYPING_TIMER_LENGTH);
@@ -222,7 +226,9 @@ $(function() {
         if (event.which === 13) {
             if (username) {
                 sendMessage();
-                socket.emit('stop typing');
+                socket.emit('stop typing', {
+                    room: socket.room
+                });
                 typing = false;
             } else {
                 setUsername();

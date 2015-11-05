@@ -15,6 +15,7 @@ var chats = {};
 io.on('connection', function (socket) {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
+        socket.room = data.room;
         socket.join(data.room);
         // we store the username in the socket session for this client
         socket.username = data.username;
@@ -30,6 +31,38 @@ io.on('connection', function (socket) {
         socket.broadcast.to(data.room).emit('user joined', {
             username: socket.username,
             numUsers: chats[data.room].numUsers
+        });
+    });
+
+    // when the user disconnects.. perform this
+    socket.on('disconnect', function () {
+        // remove the username from global usernames list
+        if (chats && socket.room && chats[socket.room] && chats[socket.room].addedUser) {
+            delete chats[socket.room].usernames[socket.username];
+            chats[socket.room].numUsers -= 1;
+            if(chats[socket.room].numUsers === 0){
+                delete chats[socket.room];
+                return;
+            }
+            // echo globally that this client has left
+            socket.broadcast.to(socket.room).emit('user left', {
+                username: socket.username,
+                numUsers: chats[socket.room].numUsers
+            });
+        }
+    });
+
+    // when the client emits 'typing', we broadcast it to others
+    socket.on('typing', function (data) {
+        socket.broadcast.to(data.room).emit('typing', {
+            username: socket.username
+        });
+    });
+
+    // when the client emits 'stop typing', we broadcast it to others
+    socket.on('stop typing', function (data) {
+        socket.broadcast.to(data.room).emit('stop typing', {
+            username: socket.username
         });
     });
 
@@ -51,11 +84,6 @@ io.on('connection', function (socket) {
             message: data.message
         }); 
     });
-
-    socket.on('join room', function (room) {
-        console.log(room);
-    });
-
 });
 
 // Routing
