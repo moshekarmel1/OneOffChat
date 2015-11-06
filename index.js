@@ -19,6 +19,7 @@ io.on('connection', function (socket) {
         socket.join(data.room);
         // we store the username in the socket session for this client
         socket.username = data.username;
+        if(!chats[data.room]) return;
         // add the client's username to the global list
         chats[data.room].usernames[data.username] = data.username;
         chats[data.room].numUsers += 1;
