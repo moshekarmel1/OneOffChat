@@ -19,7 +19,7 @@ $(function() {
     var connected = false;
     var typing = false;
     var lastTypingTime;
-    var $currentInput = $usernameInput.focus(); 
+    var $currentInput = $usernameInput.focus();
 
     var socket = io();
     if(location.pathname.length >= 15){
@@ -293,5 +293,9 @@ $(function() {
     // Whenever the server emits 'stop typing', kill the typing message
     socket.on('stop typing', function (data) {
         removeChatTyping(data);
+    });
+    //whenever the chat obj got deleted, you should start a new one
+    socket.on('404', function(){
+        window.location = '/404.html';
     });
 });

@@ -10,6 +10,7 @@ server.listen(port, function () {
     console.log('Server listening at port %d', port);
 });
 
+var cleanup = null;
 var chats = {};
 
 io.on('connection', function (socket) {
@@ -19,7 +20,12 @@ io.on('connection', function (socket) {
         socket.join(data.room);
         // we store the username in the socket session for this client
         socket.username = data.username;
-        if(!chats[data.room]) return;
+        if(!chats[data.room]){
+            socket.emit('404', {
+
+            });
+            return;
+        }
         // add the client's username to the global list
         chats[data.room].usernames[data.username] = data.username;
         chats[data.room].numUsers += 1;
@@ -42,7 +48,24 @@ io.on('connection', function (socket) {
             delete chats[socket.room].usernames[socket.username];
             chats[socket.room].numUsers -= 1;
             if(chats[socket.room].numUsers === 0){
-                delete chats[socket.room];
+                chats[socket.room].delete = true;
+                if(!cleanup){
+                    cleanup = setInterval(function() {
+                        if(Object.keys(chats).length === 0){
+                            if(cleanup){
+                                clearInterval(cleanup);
+                                cleanup = null;
+                            }
+                            return;
+                        }
+                        for (var chat in chats) {
+                            console.log(chat);
+                            if (chats[chat].delete) {
+                                delete chats[chat];
+                            }
+                        }
+                    }, 30 * 1000);
+                }
                 return;
             }
             // echo globally that this client has left
@@ -71,11 +94,12 @@ io.on('connection', function (socket) {
         chats[socket.id] = {
             usernames: {},
             numUsers: 0,
-            addedUser: false
+            addedUser: false,
+            delete: false
         };
         socket.emit('go chat', {
             socket: socket.id
-        }); 
+        });
     });
     // when the client emits 'new message', this listens and executes
     socket.on('new message', function (data) {
@@ -83,7 +107,7 @@ io.on('connection', function (socket) {
         socket.broadcast.to(data.room).emit('new message', {
             username: socket.username,
             message: data.message
-        }); 
+        });
     });
 });
 
@@ -94,6 +118,6 @@ app.get('/*', function(req, res){
     if(chats[req.url.substring(1)]){
         res.sendFile(__dirname + '/public/chat.html');
     }else{
-        res.send('404 - not found. This chat has expired');
+        res.sendFile(__dirname + '/public/404.html');
     }
 });
