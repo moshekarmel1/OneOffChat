@@ -64,7 +64,7 @@ io.on('connection', function (socket) {
                                 delete chats[chat];
                             }
                         }
-                    }, 30 * 1000);
+                    }, 60 * 60 * 1000);
                 }
                 return;
             }
