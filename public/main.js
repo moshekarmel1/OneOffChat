@@ -20,12 +20,12 @@ $(function() {
     var typing = false;
     var lastTypingTime;
     var $currentInput = $usernameInput.focus();
-
     var socket = io();
+    // if we have a room id in the URL, use it
     if(location.pathname.length >= 15){
         socket.room = location.pathname.substring(1);
     }
-
+    // log how many people are here
     function addParticipantsMessage (data) {
         var message = '';
         if (data.numUsers === 1) {
@@ -35,7 +35,6 @@ $(function() {
         }
         log(message);
     }
-
     // Sends a chat message
     function sendMessage () {
         var message = $inputMessage.val();
@@ -55,27 +54,32 @@ $(function() {
             });
         }
     }
-
     // Adds the visual chat typing message
     function addChatTyping (data) {
         data.typing = true;
         data.message = 'is typing';
         addChatMessage(data);
     }
-
     // Removes the visual chat typing message
     function removeChatTyping (data) {
         getTypingMessages(data).fadeOut(function () {
             $(this).remove();
         });
     }
-
+    // Email helper for first time login
+    function addEmailHelper () {
+        var $el = $('<li>').addClass('log')
+            .text('click here to email a link to a friend')
+            .click(function(){
+                window.location = 'mailto://?subject=Join my chat&body=' + window.location;
+            });
+        addMessageElement($el);
+    }
     // Log a message
     function log (message, options) {
         var $el = $('<li>').addClass('log').text(message);
         addMessageElement($el, options);
     }
-
     // Adds the visual chat message to the message list
     function addChatMessage (data, options) {
         // Don't fade the message in if there is an 'X was typing'
@@ -85,7 +89,6 @@ $(function() {
             options.fade = false;
             $typingMessages.remove();
         }
-
         var $usernameDiv = $('<span class="username"/>')
             .text(data.username)
             .css('color', getUsernameColor(data.username));
@@ -98,7 +101,6 @@ $(function() {
             .append($usernameDiv, $messageBodyDiv);
         addMessageElement($messageDiv, options);
     }
-
     // Adds the visual chat typing message
     function addChatTyping (data) {
         data.typing = true;
@@ -112,7 +114,6 @@ $(function() {
             $(this).remove();
         });
     }
-
     // Adds a message element to the messages and scrolls to the bottom
     // el - The element to add as a message
     // options.fade - If the element should fade-in (default = true)
@@ -141,12 +142,10 @@ $(function() {
         }
         $messages[0].scrollTop = $messages[0].scrollHeight;
     }
-
     // Prevents input from having injected markup
     function cleanInput (input) {
         return $('<div/>').text(input).text();
     }
-
     // Updates the typing event
     function updateTyping () {
         if (connected) {
@@ -157,7 +156,6 @@ $(function() {
             });
         }
         lastTypingTime = (new Date()).getTime();
-
         setTimeout(function () {
             var typingTimer = (new Date()).getTime();
             var timeDiff = typingTimer - lastTypingTime;
@@ -170,14 +168,12 @@ $(function() {
         }, TYPING_TIMER_LENGTH);
         }
     }
-
     // Gets the 'X is typing' messages of a user
     function getTypingMessages (data) {
         return $('.typing.message').filter(function (i) {
             return $(this).data('username') === data.username;
         });
     }
-
     function showUsers(data){
         console.log(data.usernames);
         addParticipantsMessage(data);
@@ -185,20 +181,17 @@ $(function() {
             $messages.append($('<li>').text(name).css('color', getUsernameColor(i)).addClass('log'));
         });
     }
-
     // Gets the color of a username through our hash function
     function getUsernameColor (username) {
-    // Compute hash code
-    var hash = 7;
-    for (var i = 0; i < username.length; i++) {
-       hash = username.charCodeAt(i) + (hash << 5) - hash;
-    }
-    // Calculate color
-    var index = Math.abs(hash % COLORS.length);
+        // Compute hash code
+        var hash = 7;
+        for (var i = 0; i < username.length; i++) {
+           hash = username.charCodeAt(i) + (hash << 5) - hash;
+        }
+        // Calculate color
+        var index = Math.abs(hash % COLORS.length);
         return COLORS[index];
     }
-
-
     // Sets the client's username
     function setUsername () {
         username = cleanInput($usernameInput.val().trim());
@@ -270,6 +263,7 @@ $(function() {
             prepend: true
         });
         addParticipantsMessage(data);
+        addEmailHelper();
     });
     // Whenever the server emits 'new message', update the chat body
     socket.on('new message', function (data) {

@@ -16,17 +16,17 @@ var chats = {};
 io.on('connection', function (socket) {
     // when the client emits 'add user', this listens and executes
     socket.on('add user', function (data) {
+        //if the room is not around - 404
+        if(!chats[data.room]){
+            socket.emit('404', {});
+            return;
+        }
         socket.room = data.room;
         socket.join(data.room);
         // we store the username in the socket session for this client
         socket.username = data.username;
-        if(!chats[data.room]){
-            socket.emit('404', {
-
-            });
-            return;
-        }
         // add the client's username to the global list
+        chats[data.room].shouldDelete = false;
         chats[data.room].usernames[data.username] = data.username;
         chats[data.room].numUsers += 1;
         chats[data.room].addedUser = true;
@@ -48,7 +48,7 @@ io.on('connection', function (socket) {
             delete chats[socket.room].usernames[socket.username];
             chats[socket.room].numUsers -= 1;
             if(chats[socket.room].numUsers === 0){
-                chats[socket.room].delete = true;
+                chats[socket.room].shouldDelete = true;
                 if(!cleanup){
                     cleanup = setInterval(function() {
                         if(Object.keys(chats).length === 0){
@@ -95,7 +95,7 @@ io.on('connection', function (socket) {
             usernames: {},
             numUsers: 0,
             addedUser: false,
-            delete: false
+            shouldDelete: false
         };
         socket.emit('go chat', {
             socket: socket.id
