@@ -60,7 +60,7 @@ io.on('connection', function (socket) {
                         }
                         for (var chat in chats) {
                             console.log(chat);
-                            if (chats[chat].delete) {
+                            if (chats[chat].shouldDelete) {
                                 delete chats[chat];
                             }
                         }
