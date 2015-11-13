@@ -91,14 +91,22 @@ io.on('connection', function (socket) {
     });
 
     socket.on('start', function (data) {
-        chats[socket.id] = {
-            usernames: {},
-            numUsers: 0,
-            addedUser: false,
-            shouldDelete: false
-        };
+        var chatId = '';
+        if(data.name && data.name.length > 0){
+            chatId = data.name;// name the chat the userentered name
+        }else{
+            chatId = socket.id;// use the socket id as a random URL
+        }
+        if(!chats[chatId]){// if the chat doesn't already exist
+            chats[chatId] = {// create it
+                usernames: {},
+                numUsers: 0,
+                addedUser: false,
+                shouldDelete: false
+            };
+        }
         socket.emit('go chat', {
-            socket: socket.id
+            socket: chatId
         });
     });
     // when the client emits 'new message', this listens and executes

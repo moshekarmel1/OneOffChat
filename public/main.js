@@ -10,6 +10,7 @@ $(function() {
     // Initialize varibles
     var $window = $(window);
     var $usernameInput = $('.usernameInput'); // Input for username
+    var $roomInput = $('.roomInput');
     var $messages = $('.messages'); // Messages area
     var $inputMessage = $('.inputMessage'); // Input message input box
     var $loginPage = $('.login.page'); // The login page
@@ -22,8 +23,9 @@ $(function() {
     var $currentInput = $usernameInput.focus();
     var socket = io();
     // if we have a room id in the URL, use it
-    if(location.pathname.length >= 15){
+    if(location.pathname.length >= 2){
         socket.room = location.pathname.substring(1);
+        if(location.pathname.length < 15) document.title = socket.room + " - One Off Chat";
     }
     // log how many people are here
     function addParticipantsMessage (data) {
@@ -244,7 +246,10 @@ $(function() {
     });
     // Start a new chat
     $('#start').on('click', function(){
-        socket.emit('start', {});
+        var val = $roomInput.val().trim();
+        socket.emit('start', {
+            name: val
+        });
     });
     // Join a chat
     $('#go').on('click', function(){
